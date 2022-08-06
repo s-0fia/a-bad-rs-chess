@@ -96,7 +96,7 @@ pub fn can_move_to(board: &[[Piece; 8]; 8], from: &(usize, usize), to: &(usize, 
     let (x1, x2) = min_max(from.0, to.0);
     let (y1, y2) = min_max(from.1, to.1);
 
-    // points aligned in ↘ diagonal right direction's Δx and Δy 
+    // points aligned in angles between → and ↓, Δx and Δy 
     let (dx, dy) = (x2 - x1, y2 - y1);
 
     match piece.0 {

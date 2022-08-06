@@ -25,12 +25,15 @@ fn main() {
 }
 
 fn draw(board: &[[Piece; 8]; 8]) {
+    print!("|---|---|---|---|---|---|---|---|\n");
+    io::stdout().flush().unwrap();
     for y in 0..8 {
+        print!("|");
         for x in 0..8 {
             let (c, t) = board[y][x].to_string();
-            print!("{}{}|", c, t);
+            print!("{}{} |", c, t);
         }
-        print!("\n");
+        print!("\n|---|---|---|---|---|---|---|---|\n");
         io::stdout().flush().unwrap();
     }
     println!("\n");
