@@ -1,9 +1,11 @@
 use std::fmt;
 use crate::lib::{min, max, min_max};
 
+// Piece struct (tuple type) holds which piece and colour it is
 #[derive(Copy, Clone)]
 pub struct Piece(pub Type, pub Colour);
 
+// Piece type, emuns to differ by var type
 #[derive(Copy, Clone, PartialEq)]
 pub enum Type {
     Bishop,
@@ -15,6 +17,7 @@ pub enum Type {
     None
 }
 
+// Piece colour, emuns to differ by var type
 #[derive(Copy, Clone, PartialEq)]
 pub enum Colour {
     Black,
@@ -65,6 +68,10 @@ pub fn move_to(board: &mut [[Piece; 8]; 8], from: (usize, usize), to: (usize, us
     let empty_piece = Piece(Type::None, Colour::None);
     let piece: Piece = board[from.1][from.0];
 
+    if piece.0 == Type::None {
+        return (false, false);
+    }
+
     if can_move_to(board, &from, &to) {
         board[from.1][from.0] = empty_piece;
         
@@ -89,9 +96,32 @@ pub fn can_move_to(board: &[[Piece; 8]; 8], from: &(usize, usize), to: &(usize, 
     let (x1, x2) = min_max(from.0, to.0);
     let (y1, y2) = min_max(from.1, to.1);
 
+    // points aligned in ↘ diagonal right direction's Δx and Δy 
+    let (dx, dy) = (x2 - x1, y2 - y1);
+
     match piece.0 {
         Type::Bishop => {
+            // dx = dy means 45° angle diagonally
+            if dx != dy {
+                return false;
+            }
 
+            // iterate through each position (↘) and check if is in the way
+            for c in 1..dx {
+                let x = x1 + c;
+                let y = y1 + c;
+
+                if board[y][x].0 != Type::None {
+                    return false;
+                }
+            }
+
+            // if same colour piece at end
+            if board[to.1][to.0].1 == piece.1 {
+                return false;
+            }
+
+            return true;
         },
         Type::King => {
 
@@ -144,7 +174,6 @@ pub fn can_move_to(board: &[[Piece; 8]; 8], from: &(usize, usize), to: &(usize, 
             if y1 == y2 {
                 for x in (x1 + 1)..x2 {
                     if board[y1][x].0 != Type::None {
-                        println!("Piece in the way! ({}, {})", x, y1);
                         return false;
                     }
                 }
@@ -153,7 +182,6 @@ pub fn can_move_to(board: &[[Piece; 8]; 8], from: &(usize, usize), to: &(usize, 
             else {
                 for y in (y1 + 1)..y2 {
                     if board[y][x1].0 != Type::None {
-                        println!("Piece in the way! ({}, {})", x1, y);
                         return false;
                     }
                 }
@@ -171,7 +199,7 @@ pub fn can_move_to(board: &[[Piece; 8]; 8], from: &(usize, usize), to: &(usize, 
         }
     }
 
-    return false;
+    false
 }
 
 fn in_check(board: &[[Piece; 8]; 8], king_position: (usize, usize)) -> bool {
