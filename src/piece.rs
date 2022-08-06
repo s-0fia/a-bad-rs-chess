@@ -1,40 +1,41 @@
 use std::fmt;
+use crate::lib::{min, max, min_max};
 
 #[derive(Copy, Clone)]
 pub struct Piece(pub Type, pub Colour);
 
 #[derive(Copy, Clone, PartialEq)]
 pub enum Type {
-    Rook,
-    Knight,
     Bishop,
     King,
-    Queen,
+    Knight,
     Pawn,
+    Queen,
+    Rook,
     None
 }
 
 #[derive(Copy, Clone, PartialEq)]
 pub enum Colour {
-    White,
     Black,
+    White,
     None
 }
 
 impl Piece {
     pub fn to_debug_string(&self) -> String {
         let which_type: &str = match self.0 {
-            Type::Rook => "Rook",
-            Type::Knight => "Knight",
             Type::Bishop => "Bishop",
             Type::King => "King",
-            Type::Queen => "Queen",
+            Type::Knight => "Knight",
             Type::Pawn => "Pawn",
+            Type::Queen => "Queen",
+            Type::Rook => "Rook",
             Type::None => "Piece"
         };
         let which_colour: &str = match self.1 {
-            Colour::White => "White",
             Colour::Black => "Black",
+            Colour::White => "White",
             Colour::None => "Blank",
         };
         String::from(format!("{} {}", which_colour, which_type))
@@ -42,59 +43,99 @@ impl Piece {
 
     pub fn to_string(&self) -> (char, char) {
         let which_type: char = match self.0 {
-            Type::Rook => 'I',
-            Type::Knight => 'Z',
             Type::Bishop => 'T',
             Type::King => 'K',
-            Type::Queen => 'Q',
+            Type::Knight => 'Z',
             Type::Pawn => 'P',
+            Type::Queen => 'Q',
+            Type::Rook => 'I',
             Type::None => ' '
         };
         let which_colour: char = match self.1 {
-            Colour::White => ',',
             Colour::Black => '\'',
+            Colour::White => ',',
             Colour::None => ' ',
         };
         (which_colour, which_type)
     }
 }
 
-// the result is (can move?, game ended?)
-pub fn move_to(board: &mut [[Piece; 8]; 8], move_from: (usize, usize), move_to: (usize, usize)) -> (bool, bool) {
+// this function makes a piece go from *from to *to and handles replacement of pieces, the result is (move made, game ended)
+pub fn move_to(board: &mut [[Piece; 8]; 8], from: (usize, usize), to: (usize, usize)) -> (bool, bool) {
     let empty_piece = Piece(Type::None, Colour::None);
-    let piece: Piece = board[move_from.1][move_from.0];
+    let piece: Piece = board[from.1][from.0];
 
-    if can_move_to(board, &move_from, &move_to) {
-        board[move_from.1][move_from.0] = empty_piece;
+    if can_move_to(board, &from, &to) {
+        board[from.1][from.0] = empty_piece;
         
         // if the piece is a king, end the game
-        if board[move_to.1][move_to.0].0 == Type::King {
-            board[move_to.1][move_to.0] = piece;
-            return (true, true);    
-        }
+        let game_over: bool = board[to.1][to.0].0 == Type::King;
 
-        board[move_to.1][move_to.0] = piece;
-        return (true, false);
+        board[to.1][to.0] = piece;
+        return (true, game_over);
     }
 
     (false, false)
 }
 
-pub fn can_move_to(board: &[[Piece; 8]; 8], move_from: &(usize, usize), move_to: &(usize, usize)) -> bool {
-    let move_from = *move_from;
-    let move_to = *move_to;
 
-    let piece: Piece = board[move_from.1][move_from.0];
+// checks if a piece can move from *from to *to, the result is (can make move) 
+pub fn can_move_to(board: &[[Piece; 8]; 8], from: &(usize, usize), to: &(usize, usize)) -> bool {
+    let from = *from;
+    let to = *to;
 
-    let x1 = if move_from.0 > move_to.0 { move_to.0 } else { move_from.0 };
-    let x2 = if move_from.0 < move_to.0 { move_to.0 } else { move_from.0 };
-    let y1 = if move_from.1 > move_to.1 { move_to.1 } else { move_from.1 };
-    let y2 = if move_from.1 < move_to.1 { move_to.1 } else { move_from.1 };
+    let piece: Piece = board[from.1][from.0];
+
+    let (x1, x2) = min_max(from.0, to.0);
+    let (y1, y2) = min_max(from.1, to.1);
 
     match piece.0 {
+        Type::Bishop => {
+
+        },
+        Type::King => {
+
+        },
+        Type::Knight => {
+            // new scope so that the shadowed vars (from and to) are 
+            // converted back to their original types and all other vars are discarded
+            {
+                // shadow the variables into isize type for easy addition
+                let from: (isize, isize) = (from.0 as isize, from.1 as isize);
+                let to: (isize, isize) = (to.0 as isize, to.1 as isize);
+
+                let possible_moves: [(isize, isize); 8] = [(-1, -2), (1, -2), (2, -1), (2, 1), (1, 2), (-1, 2), (-2, 1), (-2, -1)];
+                let mut can_move: bool = false;
+                
+                // iterate through the moves and check if any are equal to the to position
+                for possible_move in possible_moves {
+                    if ((from.0) + possible_move.0, (from.1) + possible_move.1) == to {
+                        can_move = true;
+                        break;
+                    }
+                }
+
+                if !can_move {
+                    return false;
+                }
+            }
+
+            // if the final position's piece colour the same colour as the piece
+            if board[to.1][to.0].1 == piece.1 {
+                return false;
+            }
+
+            return true;
+        },
+        Type::Pawn => {
+
+        },
+        Type::Queen => {
+
+        },
         Type::Rook => {
             // if the positions are not only aligned horizontally or vertically
-            if !(move_from.0 == move_to.0 || move_from.1 == move_to.1) {
+            if !(from.0 == to.0 || from.1 == to.1) {
                 return false;
             }
 
@@ -119,54 +160,11 @@ pub fn can_move_to(board: &[[Piece; 8]; 8], move_from: &(usize, usize), move_to:
             }
 
             // if the final position's piece colour the same colour as the piece
-            if board[move_to.1][move_to.0].1 == piece.1 {
+            if board[to.1][to.0].1 == piece.1 {
                 return false;
             }
 
             return true;
-        },
-        Type::Knight => {
-            // new scope so that the shadowed vars (move_from and move_to) are 
-            // converted back to their original types and all other vars are discarded
-            {
-                // shadow the variables into isize type for easy addition
-                let move_from: (isize, isize) = (move_from.0 as isize, move_from.1 as isize);
-                let move_to: (isize, isize) = (move_to.0 as isize, move_to.1 as isize);
-
-                let possible_moves: [(isize, isize); 8] = [(-1, -2), (1, -2), (2, -1), (2, 1), (1, 2), (-1, 2), (-2, 1), (-2, -1)];
-                let mut can_move: bool = false;
-                
-                // iterate through the moves and check if any are equal to the move_to position
-                for possible_move in possible_moves {
-                    if ((move_from.0) + possible_move.0, (move_from.1) + possible_move.1) == move_to {
-                        can_move = true;
-                        break;
-                    }
-                }
-
-                if !can_move {
-                    return false;
-                }
-            }
-
-            // if the final position's piece colour the same colour as the piece
-            if board[move_to.1][move_to.0].1 == piece.1 {
-                return false;
-            }
-
-            return true;
-        },
-        Type::Bishop => {
-
-        },
-        Type::King => {
-
-        },
-        Type::Queen => {
-
-        },
-        Type::Pawn => {
-
         },
         Type::None => {
 

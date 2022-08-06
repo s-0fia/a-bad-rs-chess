@@ -1,7 +1,8 @@
 use std::io;
 use std::io::Write;
-mod piece;
 use crate::piece::{Piece, Type, Colour};
+mod piece;
+mod lib;
 
 fn main() {
     let empty_piece = Piece(Type::None, Colour::None);
